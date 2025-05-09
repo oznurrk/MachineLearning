@@ -1,0 +1,65 @@
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+
+#Veri Oluşturma
+
+np.random.seed(42)
+n_samples=2000
+income=np.random.randint(3000, 30001, n_samples)
+age=np.random.randint(18, 66, n_samples)
+debt=np.random.randint(0, 50001, n_samples) #toplam kredikartı limiti/kredi borcu
+credit_score=np.random.randint(300, 901, n_samples)
+employment_years=np.random.randint(0, 41, n_samples)
+approved=[]
+
+approved = np.where(
+    (income > 8000) & (credit_score > 600) & (debt < 20000) & (employment_years > 2),
+    1,  # Onaylandı
+    0   # Reddedildi
+)
+
+# Noise eklemek
+noise = np.random.randint(0, 5000, n_samples)  # 0 ile 5000 arasında rastgele değerler
+approved = approved + noise // 10000  # Kredi onayı için küçük bir değişiklik (normalde 0 veya 1 olmalı)
+
+
+df=pd.DataFrame({
+    'income': income,
+    'age': age,
+    'debt': debt,
+    'credit_score': credit_score,
+    'employment_years': employment_years,
+    'approved': approved
+})
+
+X=df[['income', 'age', 'debt', 'credit_score', 'employment_years']]
+y=df['approved']
+
+#Model Eğitimi
+
+X_train, X_test, y_train, y_test=train_test_split(X,y,test_size=0.2,random_state=42)
+model=RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+#tahmin ve değerlendirme
+y_prediction=model.predict(X_test)
+accuracy=accuracy_score(y_test, y_prediction)
+print("Doğruluk Oranı: ", accuracy)
+print(classification_report(y_test, y_prediction))
+confusion=confusion_matrix(y_test, y_prediction)
+print("Karışıklık Matrisi:\n", confusion)
+
+#görselleştirme
+
+plt.figure(figsize=(8,6))
+plt.scatter(y_test, y_prediction, alpha=0.5)
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+plt.xlabel('Gerçek Onay Durumu')
+plt.ylabel('Tahmin Edilen Onay Durumu')
+plt.title('Gerçek vs Tahmin Edilen Kredi Onay Durumu')
+plt.grid(True)
+plt.show()
